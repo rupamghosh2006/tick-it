@@ -73,7 +73,6 @@ export const verifyOTP = asyncHandler(async (req, res) => {
   // OTP verified → create user account
   const user = await User.create({
     walletAddress: wallet,
-    userName: req.body.userName,
     email,
     isVerified: true,
   });
