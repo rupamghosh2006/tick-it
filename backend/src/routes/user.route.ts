@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { walletProtect } from "../middlewares/walletProtect.middleware.js";
-import { sendOTP, verifyOTP } from "../controllers/user.controller.js";
+import { sendOTP, setUserName, verifyOTP } from "../controllers/user.controller.js";
 
 const router = Router();
 
@@ -9,5 +9,8 @@ router.post("/send-otp", walletProtect, sendOTP);
 
 // Verify OTP & create user account
 router.post("/verify-otp", walletProtect, verifyOTP);
+
+// Set username for user
+router.post("/set-username", walletProtect, setUserName);
 
 export default router;
