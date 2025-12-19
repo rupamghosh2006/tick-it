@@ -33,8 +33,4 @@ const userSchema = new Schema<IUser>(
   { timestamps: true }
 );
 
-// Indexes for performance (search, validation)
-userSchema.index({ walletAddress: 1 });
-userSchema.index({ email: 1 });
-
 export const User = mongoose.model<IUser>("User", userSchema);
