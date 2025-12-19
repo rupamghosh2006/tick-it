@@ -1,68 +1,95 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: #0f172a;
+  color: #e5e7eb;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* Page */
+.page {
+  padding: 32px;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
+.page-title {
+  font-size: 28px;
+  margin-bottom: 24px;
+}
+
+/* Grid */
+.event-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+/* Card */
+.event-card {
+  background-color: #020617;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #1e293b;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.event-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+/* Image */
+.event-image {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+}
+
+/* Content */
+.event-content {
+  padding: 16px;
+}
+
+.event-title {
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.event-desc {
+  font-size: 14px;
+  color: #94a3b8;
+  margin-bottom: 10px;
+}
+
+.event-meta {
+  font-size: 13px;
+  margin-bottom: 4px;
+  color: #cbd5f5;
+}
+
+.event-price {
+  font-size: 16px;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+/* Button */
+.event-btn {
+  margin-top: 14px;
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-size: 14px;
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+.event-btn:hover {
+  opacity: 0.9;
 }

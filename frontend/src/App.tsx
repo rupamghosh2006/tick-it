@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { useEffect, useState } from "react";
 
 interface Event {
@@ -49,83 +48,36 @@ const App = () => {
   if (error) return <div className="p-6 text-red-600">{error}</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <h1 className="text-3xl font-bold mb-6">🎟️ All Events</h1>
+  <div className="page">
+    <h1 className="page-title">🎟️ All Events</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {events.map((event) => (
-          <div
-            key={event._id}
-            className="bg-white rounded-xl shadow p-5 hover:shadow-lg transition"
-          >
-            <img
-              src={event.imageUrl}
-              alt={event.eventName}
-              className="h-40 w-full object-cover rounded-lg mb-3"
-            />
+    <div className="event-grid">
+      {events.map((event) => (
+        <div className="event-card" key={event._id}>
+          <img
+            src={event.imageUrl}
+            alt={event.eventName}
+            className="event-image"
+          />
 
-            <h2 className="text-xl font-semibold mb-2">
-              {event.eventName}
-            </h2>
+          <div className="event-content">
+            <h2 className="event-title">{event.eventName}</h2>
+            <p className="event-desc">{event.eventDescription}</p>
 
-            <p className="text-gray-600 text-sm mb-2">
-              {event.eventDescription}
-            </p>
-
-            <p className="text-sm">🌐 {event.mode}</p>
-            <p className="text-sm">
+            <p className="event-meta">🌐 {event.mode}</p>
+            <p className="event-meta">
               🎫 Seats: {event.soldSeats}/{event.maxSeats}
             </p>
 
-            <p className="font-semibold mt-2">
-              {event.ticketPrice} APT
-            </p>
+            <p className="event-price">₹ {event.ticketPrice}</p>
 
-            <button className="mt-4 w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
-              View Details
-            </button>
+            <button className="event-btn">View Details</button>
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
-  );
+  </div>
+);
 };
 
 export default App;
-=======
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
-
-export default App
->>>>>>> e020853e2bdd14770dd3fd976d412ae4fd61326e
