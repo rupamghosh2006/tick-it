@@ -4,13 +4,19 @@ import App from "./App";
 import "./index.css";
 
 import { AptosWalletAdapterProvider } from "@aptos-labs/wallet-adapter-react";
+import { AuthProvider } from "./context/AuthContext";
+import ErrorBoundary from "./ErrorBoundary";
 
 ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
 ).render(
   <React.StrictMode>
     <AptosWalletAdapterProvider autoConnect>
-      <App />
+      <AuthProvider>
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
+      </AuthProvider>
     </AptosWalletAdapterProvider>
   </React.StrictMode>
 );
