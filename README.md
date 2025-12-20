@@ -35,7 +35,7 @@ All interactions are tied directly to the user’s wallet, ensuring authenticity
 * UI: shadcn/ui, Tailwind CSS
 * Wallet Integration: Petra Wallet (Aptos)
 * Blockchain: Aptos
-* Backend: Node.js (API, indexing, orchestration)
+* Backend: Express.js (API, indexing, orchestration)
 * Networking: Axios + REST APIs
 
 ---
@@ -50,22 +50,9 @@ If Petra is not installed, users are redirected to the official installation pag
 
 ---
 
-## Project Structure (Simplified)
-
-```
-/src
- ├─ pages/        # Auth, dashboard, events
- ├─ components/   # UI and wallet components
- ├─ api/          # Backend API helpers
- ├─ utils/        # LocalStorage and shared utilities
- └─ main.tsx
-```
-
----
-
 ## Environment Setup
 
-Create a `.env` file in the root directory:
+Create a `.env` file in the front-end directory:
 
 ```
 VITE_PUBLIC_BACKEND_URL=<your-backend-url>
