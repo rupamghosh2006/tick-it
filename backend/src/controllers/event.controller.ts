@@ -2,20 +2,11 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Event } from "../models/event.models.js";
+import { uploadToPinata } from "../utils/pinata.js";
+import fs from "fs";
 
 export const createEvent = asyncHandler(async (req, res) => {
-  const { eventName, eventDescription, mode, date, time, location, ticketPrice, permission, imageUrl, maxSeats, eventBlockchainId } = req.body;
-
-  if (!eventName || !eventDescription || !mode || !date || !time || !ticketPrice || !permission || !maxSeats) {
-    throw new ApiError(400, "All required event fields must be provided");
-  }
-
-  if (!req.user?.address) {
-    throw new ApiError(400, "User address is required to create an event");
-  }
-
-  const newEvent = await Event.create({
-    hostAddress: req.user?.address,
+  const {
     eventName,
     eventDescription,
     mode,
@@ -24,9 +15,53 @@ export const createEvent = asyncHandler(async (req, res) => {
     location,
     ticketPrice,
     permission,
-    imageUrl,
     maxSeats,
     eventBlockchainId,
+  } = req.body;
+
+  // 🔒 basic validation
+  if (
+    !eventName ||
+    !eventDescription ||
+    !mode ||
+    !date ||
+    !time ||
+    !ticketPrice ||
+    !permission ||
+    !maxSeats ||
+    !eventBlockchainId
+  ) {
+    throw new ApiError(400, "All required event fields must be provided");
+  }
+
+  if (!req.user?.address) {
+    throw new ApiError(401, "User address is required to create an event");
+  }
+
+  // 🖼 banner image required
+  if (!req.file) {
+    throw new ApiError(400, "Event banner image is required");
+  }
+
+  // ⬆️ Upload banner to Pinata (IPFS)
+  const imageUrl = await uploadToPinata(req.file.path);
+
+  // 🧹 delete local file after upload
+  fs.unlinkSync(req.file.path);
+
+  const newEvent = await Event.create({
+    hostAddress: req.user.address,
+    eventName,
+    eventDescription,
+    mode,
+    date,
+    time,
+    location,
+    ticketPrice: Number(ticketPrice),
+    permission,
+    maxSeats: Number(maxSeats),
+    eventBlockchainId: Number(eventBlockchainId),
+    imageUrl, // ✅ IPFS URL
   });
 
   return res
