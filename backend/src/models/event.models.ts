@@ -21,6 +21,19 @@ const eventSchema = new mongoose.Schema(
       enum: ["virtual", "in-person"],
       required: true,
     },
+    date: {
+      type: Date,
+      required: true,
+      index: true,
+    },
+    time: {
+      type: String,
+      required: true,
+    },
+    location: {
+      type: String,
+      default: null,
+    },
     ticketPrice: {
       type: Number,
       required: true,
@@ -29,6 +42,7 @@ const eventSchema = new mongoose.Schema(
       type: String,
       enum: ["open", "approval"],
       required: true,
+      default: "open",
       index: true,
     },
     imageUrl: {

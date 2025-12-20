@@ -4,9 +4,9 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Event } from "../models/event.models.js";
 
 export const createEvent = asyncHandler(async (req, res) => {
-  const { eventName, eventDescription, mode, ticketPrice, permission, imageUrl, maxSeats, eventBlockchainId } = req.body;
+  const { eventName, eventDescription, mode, date, time, location, ticketPrice, permission, imageUrl, maxSeats, eventBlockchainId } = req.body;
 
-  if (!eventName || !eventDescription || !mode || !ticketPrice || !permission || !maxSeats) {
+  if (!eventName || !eventDescription || !mode || !date || !time || !ticketPrice || !permission || !maxSeats) {
     throw new ApiError(400, "All required event fields must be provided");
   }
 
@@ -19,6 +19,9 @@ export const createEvent = asyncHandler(async (req, res) => {
     eventName,
     eventDescription,
     mode,
+    date,
+    time,
+    location,
     ticketPrice,
     permission,
     imageUrl,
