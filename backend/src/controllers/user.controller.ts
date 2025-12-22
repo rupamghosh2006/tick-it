@@ -104,3 +104,17 @@ export const setUserName = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, user, "Username set successfully"));
 });
+
+//Find user by wallet address
+export const getUserByWallet = asyncHandler(async (req, res) => {
+  const { address } = req.params;
+  if (!address) throw new ApiError(400, "Wallet required");
+
+  const user = await User.findOne({ walletAddress: address });
+
+  if (!user) throw new ApiError(404, "User not found");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "User found"));
+});
