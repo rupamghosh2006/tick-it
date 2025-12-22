@@ -1,14 +1,59 @@
 import React, { useEffect, useState } from "react";
 import { 
-  Plus, Calendar, Share2, X, Check, Ticket, DollarSign, 
+  Plus, Calendar, Share2, X, Ticket, DollarSign, 
   Lock, Unlock, AlertCircle, Loader2, Copy, Download, Eye,
   BarChart3, TrendingUp, Users, Upload, MapPin, Clock,
-  Sparkles, Zap, Star, ChevronRight, Search, Filter
+  Sparkles, Zap, Star, ChevronRight
 } from "lucide-react";
 import { Alert, AlertDescription } from '../components/ui/alert';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 
 const BACKEND_URL = "http://localhost:4000";
+
+// Type definitions
+interface EventData {
+  _id: string;
+  eventName: string;
+  eventDescription: string;
+  mode: string;
+  date: string;
+  time: string;
+  location?: string;
+  ticketPrice: number;
+  permission: string;
+  maxSeats: number;
+  soldSeats: number;
+  banner?: string;
+  imageUrl?: string;
+  hostAddress?: string;
+  createdAt: string;
+}
+
+interface TicketData {
+  _id: string;
+  eventId: EventData | string;
+  participantAddress: string;
+  qrCode: string;
+  valid: boolean;
+  createdAt: string;
+}
+
+interface FormData {
+  eventName: string;
+  eventDescription: string;
+  mode: string;
+  date: string;
+  time: string;
+  location: string;
+  ticketPrice: string;
+  permission: string;
+  maxSeats: string;
+  banner: File | null;
+  bannerPreview: string | null;
+}
+
+interface FormErrors {
+  [key: string]: string;
+}
 
 // Constants
 const INITIAL_FORM_STATE = {
@@ -32,8 +77,8 @@ const PERMISSIONS = [
 ];
 
 // Validation Helper
-function validateEventForm(formData) {
-  const errors = {};
+function validateEventForm(formData: FormData): FormErrors {
+  const errors: FormErrors = {};
 
   if (!formData.eventName?.trim()) {
     errors.eventName = "Event name is required";
@@ -56,11 +101,11 @@ function validateEventForm(formData) {
     errors.time = "Time is required";
   }
 
-  if (formData.maxSeats < 1) {
+  if (Number(formData.maxSeats) < 1) {
     errors.maxSeats = "At least 1 seat is required";
   }
 
-  if (formData.ticketPrice < 0) {
+  if (Number(formData.ticketPrice) < 0) {
     errors.ticketPrice = "Price cannot be negative";
   }
 
@@ -68,7 +113,7 @@ function validateEventForm(formData) {
 }
 
 // Utility Functions
-const formatDate = (dateString) => {
+const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -76,7 +121,7 @@ const formatDate = (dateString) => {
   });
 };
 
-const formatTime = (timeString) => {
+const formatTime = (timeString: string | null | undefined) => {
   if (!timeString) return "Invalid";
   
   const timeParts = timeString.includes(':') ? timeString.split(':') : [timeString];
@@ -88,13 +133,21 @@ const formatTime = (timeString) => {
   return `${displayHour}:${timeParts[1] || '00'} ${period}`;
 };
 
-const getAvailableSeats = (event) => (event.maxSeats || 0) - (event.soldSeats || 0);
+const getAvailableSeats = (event: EventData) => (event.maxSeats || 0) - (event.soldSeats || 0);
 
 // Enhanced Event Card Component with Modern Design
-function EventCard({ event, onClick, isPurchased = false, isHosted = false }) {
+interface EventCardProps {
+  event: EventData;
+  onClick: () => void;
+  isPurchased?: boolean;
+  isHosted?: boolean;
+}
+
+function EventCard({ event, onClick, isPurchased = false, isHosted = false }: EventCardProps) {
   const availableSeats = getAvailableSeats(event);
   const isSoldOut = availableSeats <= 0;
-  const occupancyRate = ((event.soldSeats / event.maxSeats) * 100).toFixed(0);
+  const occupancyRate = (event.soldSeats / event.maxSeats) * 100;
+  const occupancyRateDisplay = occupancyRate.toFixed(0);
 
   return (
     <div
@@ -113,7 +166,7 @@ function EventCard({ event, onClick, isPurchased = false, isHosted = false }) {
               alt={event.eventName}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
               onError={(e) => {
-                e.target.style.display = "none";
+                (e.target as HTMLImageElement).style.display = "none";
               }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/50 to-transparent" />
@@ -201,7 +254,7 @@ function EventCard({ event, onClick, isPurchased = false, isHosted = false }) {
                 className={`h-full rounded-full transition-all duration-500 ${
                   isSoldOut ? "bg-red-500" : occupancyRate > 80 ? "bg-yellow-500" : "bg-blue-500"
                 }`}
-                style={{ width: `${occupancyRate}%` }}
+                style={{ width: `${occupancyRateDisplay}%` }}
               />
             </div>
           </div>
@@ -251,7 +304,12 @@ function LoadingState() {
 }
 
 // Enhanced Empty State
-function EmptyState({ message, icon: Icon = Calendar }) {
+interface EmptyStateProps {
+  message: string;
+  icon?: React.ComponentType<{ className?: string; size?: number }>;
+}
+
+function EmptyState({ message, icon: Icon = Calendar }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <div className="relative mb-6">
@@ -265,7 +323,12 @@ function EmptyState({ message, icon: Icon = Calendar }) {
 }
 
 // Modern Error State
-function ErrorState({ message, onRetry }) {
+interface ErrorStateProps {
+  message: string;
+  onRetry?: () => void;
+}
+
+function ErrorState({ message, onRetry }: ErrorStateProps) {
   return (
     <Alert className="bg-red-500/10 border-red-500/50">
       <AlertCircle className="h-4 w-4 text-red-400" />
@@ -285,11 +348,27 @@ function ErrorState({ message, onRetry }) {
 }
 
 // Enhanced Create Event Form
-function CreateEventForm({ formData, onInputChange, onSubmit, isLoading, errors }) {
-  const fileInputRef = React.useRef(null);
+interface InputChangeEvent {
+  target: {
+    name: string;
+    value: string | File | ArrayBuffer | null;
+    type?: string;
+  };
+}
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
+interface CreateEventFormProps {
+  formData: FormData;
+  onInputChange: (e: InputChangeEvent) => void;
+  onSubmit: () => void;
+  isLoading: boolean;
+  errors: FormErrors;
+}
+
+function CreateEventForm({ formData, onInputChange, onSubmit, isLoading, errors }: CreateEventFormProps) {
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
         alert('Please select an image file');
@@ -402,7 +481,7 @@ function CreateEventForm({ formData, onInputChange, onSubmit, isLoading, errors 
           onChange={onInputChange}
           placeholder="Describe what makes your event special"
           disabled={isLoading}
-          rows="4"
+          rows={4}
           className="w-full bg-slate-800/50 border-2 border-slate-700 focus:border-blue-500 rounded-xl px-4 py-3 text-white placeholder-slate-500 transition-colors focus:outline-none resize-none"
         />
         {errors.eventDescription && (
@@ -574,7 +653,12 @@ function CreateEventForm({ formData, onInputChange, onSubmit, isLoading, errors 
 }
 
 // Analytics Modal with Enhanced Design
-function AnalyticsModal({ event, onClose }) {
+interface AnalyticsModalProps {
+  event: EventData | null;
+  onClose: () => void;
+}
+
+function AnalyticsModal({ event, onClose }: AnalyticsModalProps) {
   if (!event) return null;
 
   const availableSeats = getAvailableSeats(event);
@@ -718,10 +802,15 @@ function AnalyticsModal({ event, onClose }) {
 }
 
 // Ticket Details Modal
-function TicketDetailsModal({ ticket, onClose }) {
+interface TicketDetailsModalProps {
+  ticket: TicketData | null;
+  onClose: () => void;
+}
+
+function TicketDetailsModal({ ticket, onClose }: TicketDetailsModalProps) {
   if (!ticket) return null;
 
-  const event = ticket.eventId;
+  const event = ticket.eventId as EventData;
 
   const downloadQR = () => {
     const link = document.createElement('a');
@@ -767,7 +856,7 @@ function TicketDetailsModal({ ticket, onClose }) {
               alt={event.eventName}
               className="w-full h-56 object-cover rounded-xl"
               onError={(e) => {
-                e.target.style.display = "none";
+                (e.target as HTMLImageElement).style.display = "none";
               }}
             />
           ) : null}
@@ -859,7 +948,16 @@ function TicketDetailsModal({ ticket, onClose }) {
 }
 
 // Event Details Modal (For Purchasing)
-function EventDetailsModal({ event, onClose, onPurchase, isPurchasing, isPurchased, onViewTicket }) {
+interface EventDetailsModalProps {
+  event: EventData | null;
+  onClose: () => void;
+  onPurchase: () => void;
+  isPurchasing: boolean;
+  isPurchased: boolean;
+  onViewTicket: () => void;
+}
+
+function EventDetailsModal({ event, onClose, onPurchase, isPurchasing, isPurchased, onViewTicket }: EventDetailsModalProps) {
   if (!event) return null;
 
   const availableSeats = getAvailableSeats(event);
@@ -897,13 +995,13 @@ function EventDetailsModal({ event, onClose, onPurchase, isPurchasing, isPurchas
         </div>
 
         <div className="p-6 space-y-6">
-          {event.banner || event.imageUrl && (
+          {(event.banner || event.imageUrl) && (
             <img
               src={event.banner || event.imageUrl}
               alt={event.eventName}
               className="w-full h-56 object-cover rounded-xl"
               onError={(e) => {
-                e.target.style.display = "none";
+                (e.target as HTMLImageElement).style.display = "none";
               }}
             />
           )}
@@ -982,21 +1080,21 @@ function EventDetailsModal({ event, onClose, onPurchase, isPurchasing, isPurchas
 // Main Component
 export default function EventDashboard() {
   const [activeTab, setActiveTab] = useState("available");
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [selectedTicket, setSelectedTicket] = useState(null);
-  const [analyticsEvent, setAnalyticsEvent] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<TicketData | null>(null);
+  const [analyticsEvent, setAnalyticsEvent] = useState<EventData | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
-  const [formErrors, setFormErrors] = useState({});
-  const [formData, setFormData] = useState(INITIAL_FORM_STATE);
-  const [events, setEvents] = useState([]);
-  const [purchasedTickets, setPurchasedTickets] = useState([]);
-  const [hostedEvents, setHostedEvents] = useState([]);
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const [formData, setFormData] = useState<FormData>(INITIAL_FORM_STATE);
+  const [events, setEvents] = useState<EventData[]>([]);
+  const [purchasedTickets, setPurchasedTickets] = useState<TicketData[]>([]);
+  const [hostedEvents, setHostedEvents] = useState<EventData[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
-  const [eventsError, setEventsError] = useState(null);
+  const [eventsError, setEventsError] = useState<string | null>(null);
   const [ticketsLoading, setTicketsLoading] = useState(true);
-  const [ticketsError, setTicketsError] = useState(null);
+  const [ticketsError, setTicketsError] = useState<string | null>(null);
 
   const address = localStorage.getItem("address");
   const token = localStorage.getItem("token");
@@ -1015,13 +1113,13 @@ export default function EventDashboard() {
       
       if (result.success && result.data) {
         setEvents(result.data);
-        const hosted = result.data.filter(e => e.hostAddress?.toLowerCase() === address?.toLowerCase());
+        const hosted = result.data.filter((e: EventData) => e.hostAddress?.toLowerCase() === address?.toLowerCase());
         setHostedEvents(hosted);
       } else {
         setEventsError("Failed to load events");
       }
     } catch (error) {
-      setEventsError(error.message || "Failed to load events");
+      setEventsError((error as Error).message || "Failed to load events");
       console.error("Failed to fetch events:", error);
     } finally {
       setEventsLoading(false);
@@ -1059,14 +1157,14 @@ export default function EventDashboard() {
         setTicketsError("Failed to load tickets");
       }
     } catch (error) {
-      setTicketsError(error.message || "Failed to load tickets");
+      setTicketsError((error as Error).message || "Failed to load tickets");
       console.error("Failed to fetch tickets:", error);
     } finally {
       setTicketsLoading(false);
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: InputChangeEvent) => {
     const { name, value, type } = e.target;
     
     if (type === 'file') {
@@ -1149,13 +1247,13 @@ export default function EventDashboard() {
       }
     } catch (error) {
       console.error("Failed to create event:", error);
-      alert(error.message || "Failed to create event. Please try again.");
+      alert((error as Error).message || "Failed to create event. Please try again.");
     } finally {
       setIsCreating(false);
     }
   };
 
-  const handlePurchaseTicket = async (event) => {
+  const handlePurchaseTicket = async (event: EventData) => {
     if (!address) {
       alert("Please connect your wallet first");
       return;
@@ -1185,18 +1283,24 @@ export default function EventDashboard() {
       }
     } catch (error) {
       console.error("Failed to purchase ticket:", error);
-      alert(error.message || "Failed to purchase ticket. Please try again.");
+      alert((error as Error).message || "Failed to purchase ticket. Please try again.");
     } finally {
       setIsPurchasing(false);
     }
   };
 
-  const isEventPurchased = (eventId) => {
-    return purchasedTickets.some(ticket => ticket.eventId._id === eventId || ticket.eventId === eventId);
+  const isEventPurchased = (eventId: string) => {
+    return purchasedTickets.some(ticket => {
+      const ticketEventId = typeof ticket.eventId === 'string' ? ticket.eventId : ticket.eventId._id;
+      return ticketEventId === eventId;
+    });
   };
 
-  const getPurchasedTicket = (eventId) => {
-    return purchasedTickets.find(ticket => ticket.eventId._id === eventId || ticket.eventId === eventId);
+  const getPurchasedTicket = (eventId: string) => {
+    return purchasedTickets.find(ticket => {
+      const ticketEventId = typeof ticket.eventId === 'string' ? ticket.eventId : ticket.eventId._id;
+      return ticketEventId === eventId;
+    });
   };
 
   return (
@@ -1303,7 +1407,7 @@ export default function EventDashboard() {
                 {purchasedTickets.map((ticket) => (
                   <EventCard
                     key={ticket._id}
-                    event={ticket.eventId}
+                    event={ticket.eventId as EventData}
                     isPurchased={true}
                     onClick={() => setSelectedTicket(ticket)}
                   />
@@ -1387,7 +1491,7 @@ export default function EventDashboard() {
           isPurchased={isEventPurchased(selectedEvent._id)}
           onViewTicket={() => {
             setSelectedEvent(null);
-            setSelectedTicket(getPurchasedTicket(selectedEvent._id));
+            setSelectedTicket(getPurchasedTicket(selectedEvent._id) ?? null);
           }}
         />
       )}
