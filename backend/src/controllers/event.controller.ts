@@ -16,7 +16,6 @@ export const createEvent = asyncHandler(async (req, res) => {
     ticketPrice,
     permission,
     maxSeats,
-    eventBlockchainId,
     hostAddress: bodyHost,
   } = req.body;
 
@@ -28,8 +27,7 @@ export const createEvent = asyncHandler(async (req, res) => {
     !time ||
     ticketPrice === undefined ||
     !permission ||
-    !maxSeats ||
-    !eventBlockchainId
+    !maxSeats
   ) {
     throw new ApiError(400, "All required event fields must be provided");
   }
@@ -42,6 +40,9 @@ export const createEvent = asyncHandler(async (req, res) => {
   if (!req.file) {
     throw new ApiError(400, "Event banner image is required");
   }
+
+  // 🔑 CREATE BLOCKCHAIN EVENT ID HERE (BACKEND-OWNED)
+  const eventBlockchainId = Date.now().toString(); // numeric u64-safe
 
   const imageUrl = await uploadToPinata(req.file.path);
   fs.unlinkSync(req.file.path);
@@ -57,7 +58,7 @@ export const createEvent = asyncHandler(async (req, res) => {
     ticketPrice: Number(ticketPrice),
     permission,
     maxSeats: Number(maxSeats),
-    eventBlockchainId, // ✅ STRING
+    eventBlockchainId, // ✅ backend-generated
     imageUrl,
   });
 
@@ -65,6 +66,7 @@ export const createEvent = asyncHandler(async (req, res) => {
     .status(201)
     .json(new ApiResponse(201, newEvent, "Event created successfully"));
 });
+
 
 export const getAllEvents = asyncHandler(async (_req, res) => {
   const events = await Event.find().sort({ createdAt: -1 });

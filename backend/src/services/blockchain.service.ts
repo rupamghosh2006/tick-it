@@ -1,7 +1,9 @@
 import { aptos } from "../config/aptosClient.js";
 import { Account, Ed25519PrivateKey } from "@aptos-labs/ts-sdk";
 
-/** CHECK IF TicketStore resource exists */
+/** ─────────────────────────────────────────────
+ * CHECK IF TicketStore resource exists
+ * ───────────────────────────────────────────── */
 export const accountResourceExists = async (address: string) => {
   try {
     await aptos.getAccountResource({
@@ -11,21 +13,26 @@ export const accountResourceExists = async (address: string) => {
     });
 
     return true;
-  } catch (err) {
+  } catch {
     return false;
   }
 };
 
-/** INITIALIZE TicketStore */
+/** ─────────────────────────────────────────────
+ * INITIALIZE TicketStore (idempotent)
+ * ───────────────────────────────────────────── */
 export const initTicketStore = async (privateKey: string) => {
   console.log("🔧 Initializing TicketStore...");
 
   const privKey = new Ed25519PrivateKey(privateKey);
   const account = Account.fromPrivateKey({ privateKey: privKey });
 
-  const exists = await accountResourceExists(account.accountAddress.toString());
+  const exists = await accountResourceExists(
+    account.accountAddress.toString()
+  );
+
   if (exists) {
-    console.log("ℹ Resource already initialized");
+    console.log("ℹ TicketStore already initialized");
     return "exists";
   }
 
@@ -49,7 +56,13 @@ export const initTicketStore = async (privateKey: string) => {
   return committed.hash;
 };
 
-/** BUY TICKET */
+/** ─────────────────────────────────────────────
+ * BUY TICKET ON CHAIN
+ * IMPORTANT:
+ * - eventId MUST be numeric (u64)
+ * - price MUST be numeric (u64)
+ * - host MUST be Aptos address
+ * ───────────────────────────────────────────── */
 export const buyTicketOnChain = async ({
   privateKey,
   eventId,
@@ -57,16 +70,27 @@ export const buyTicketOnChain = async ({
   host,
 }: {
   privateKey: string;
-  eventId: string;
+  eventId: string; // numeric string ONLY
   price: number;
   host: string;
 }) => {
-  console.log("🚀 Starting on-chain transaction...");
+  console.log("🚀 Starting on-chain ticket purchase...");
+
+  // 🔒 Hard validation (prevents BigInt crash)
+  if (!/^\d+$/.test(eventId)) {
+    throw new Error(
+      `Invalid eventId "${eventId}". Blockchain eventId must be numeric`
+    );
+  }
+
+  if (price < 0) {
+    throw new Error("Ticket price cannot be negative");
+  }
 
   const privKey = new Ed25519PrivateKey(privateKey);
   const account = Account.fromPrivateKey({ privateKey: privKey });
 
-  // Make sure TicketStore exists
+  // Ensure TicketStore exists
   await initTicketStore(privateKey);
 
   const tx = await aptos.transaction.build.simple({
@@ -74,7 +98,11 @@ export const buyTicketOnChain = async ({
     data: {
       function:
         "0x3ac8fb61e5cf94b535fe02152ddcaf2bffbdd2974a3f2cf01782048638985db5::ticket::buy_ticket_with_payment",
-      functionArguments: [BigInt(eventId), BigInt(price), host],
+      functionArguments: [
+        BigInt(eventId),   // u64
+        BigInt(price),     // u64
+        host,              // address
+      ],
     },
   });
 
@@ -85,7 +113,6 @@ export const buyTicketOnChain = async ({
 
   await aptos.waitForTransaction({ transactionHash: committed.hash });
 
-  console.log("🎉 Successfully purchased ticket:", committed.hash);
-
+  console.log("🎉 Ticket purchased successfully:", committed.hash);
   return committed.hash;
 };
