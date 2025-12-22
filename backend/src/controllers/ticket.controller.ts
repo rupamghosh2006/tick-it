@@ -4,11 +4,11 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Event } from "../models/event.models.js";
 import { Ticket } from "../models/ticket.models.js";
 import QRCode from "qrcode";
-import nodemailer from "nodemailer";
 import { User } from "../models/user.models.js";
 import { buyTicketOnChain } from "../services/blockchain.service.js";
+import { transporter } from "../utils/mailer.js";
 
-
+// ====================== BUY TICKET ==========================
 export const buyTicket = asyncHandler(async (req, res) => {
   const { eventId } = req.params;
   const wallet = req.user?.address;
@@ -32,7 +32,7 @@ export const buyTicket = asyncHandler(async (req, res) => {
     throw new ApiError(400, "No seats available");
   }
 
-  // Step 3: Check duplicate ticket
+  // Step 3: Prevent duplicate ticket
   const existingTicket = await Ticket.findOne({
     eventId,
     participantAddress: wallet,
@@ -42,16 +42,15 @@ export const buyTicket = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Ticket already purchased");
   }
 
+  // Step 4: Buy ticket on blockchain
   const txHash = await buyTicketOnChain({
-    privateKey: process.env.PETRA_PRIVATE_KEY!, // or user's ephemeral key
+    privateKey: process.env.PETRA_PRIVATE_KEY!,
     eventId: event.eventBlockchainId,
     price: event.ticketPrice * 100000000, // APT → Octas
     host: event.hostAddress,
-    });
+  });
 
-
-
-  // Step 4: Create ticket instance (not saved yet)
+  // Step 5: Create ticket (not saved yet)
   const ticketDoc = new Ticket({
     eventId,
     participantAddress: wallet,
@@ -59,68 +58,68 @@ export const buyTicket = asyncHandler(async (req, res) => {
     txHash,
   });
 
-  // Step 4.1 Generate QR payload and image
+  // Step 6: Generate QR
   const qrData = `${ticketDoc._id}-${wallet}-${eventId}`;
   const qrImage = await QRCode.toDataURL(qrData);
 
-  // Step 4.2 Save with QR
   ticketDoc.qrCode = qrImage;
   await ticketDoc.save();
 
-  // Step 5: Increase soldSeats on event
+  // Step 7: Update sold seats
   event.soldSeats += 1;
   await event.save();
 
-  // Step 6: Fetch user email
+  // Step 8: Fetch user email
   const user = await User.findOne({ walletAddress: wallet });
 
-  if (user && user.email) {
-    // Step 7: Send email with embedded QR
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
+  // Step 9: Send ticket email
+  if (user?.email) {
     const htmlContent = `
       <div style="font-family: Arial, sans-serif;">
         <h2>Your Ticket for <b>${event.eventName}</b></h2>
-        <p>Hi,</p>
-        <p>Thank you for purchasing a ticket for <b>${event.eventName}</b>.</p>
+        <p>Thank you for purchasing a ticket.</p>
         <p><b>Mode:</b> ${event.mode}</p>
-        <p><b>Price:</b> ${event.ticketPrice} APT (or equivalent)</p>
+        <p><b>Price:</b> ${event.ticketPrice} APT</p>
         <p><b>Wallet:</b> ${wallet}</p>
-        <p>Please show the QR code below at the event entry:</p>
-        <img src="${ticketDoc.qrCode}" alt="Ticket QR Code" style="margin-top: 10px; width: 200px; height: 200px;" />
-        <p style="margin-top: 20px;">Keep this email safe. This QR is your proof of ticket ownership.</p>
+        <p>Please show this QR code at the event entry:</p>
+        <img src="${ticketDoc.qrCode}" style="width:200px;height:200px;margin-top:10px;" />
+        <p style="margin-top:20px;">
+          Keep this email safe. This QR is your proof of entry.
+        </p>
         <p>– Aptos Ticketing System</p>
       </div>
     `;
 
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: user.email,
-      subject: `Your Ticket for ${event.eventName}`,
-      html: htmlContent,
-      attachments: [
-        {
+    try {
+      await transporter.sendMail({
+        from: `Aptos Ticketing <${process.env.BREVO_FROM_EMAIL}>`,
+        to: user.email,
+        subject: `Your Ticket for ${event.eventName}`,
+        html: htmlContent,
+        attachments: [
+          {
             filename: "ticket-qr.png",
-            content: qrImage.split("base64,")[1],  // remove prefix
+            content: ticketDoc.qrCode.split("base64,")[1],
             encoding: "base64",
-            cid: "ticketqr"
-         }
+          },
         ],
-    });
+      });
+    } catch (error) {
+      console.error("Ticket email failed:", error);
+      // Do NOT fail purchase if email fails
+    }
   }
 
-  return res
-    .status(201)
-    .json(new ApiResponse(201, {ticket: ticketDoc, txHash}, "Ticket purchased successfully"));
+  return res.status(201).json(
+    new ApiResponse(
+      201,
+      { ticket: ticketDoc, txHash },
+      "Ticket purchased successfully"
+    )
+  );
 });
 
-
+// ====================== GET MY TICKETS ==========================
 export const getMyTickets = asyncHandler(async (req, res) => {
   const wallet = req.user?.address;
 
@@ -128,7 +127,9 @@ export const getMyTickets = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Wallet authentication required");
   }
 
-  const tickets = await Ticket.find({ participantAddress: wallet }).populate("eventId");
+  const tickets = await Ticket.find({
+    participantAddress: wallet,
+  }).populate("eventId");
 
   return res
     .status(200)

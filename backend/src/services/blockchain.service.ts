@@ -57,7 +57,7 @@ export const buyTicketOnChain = async ({
   host,
 }: {
   privateKey: string;
-  eventId: number;
+  eventId: string;
   price: number;
   host: string;
 }) => {

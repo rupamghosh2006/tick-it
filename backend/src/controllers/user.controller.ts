@@ -3,7 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.models.js";
 import { Otp } from "../models/otp.models.js";
-import nodemailer from "nodemailer";
+import { transporter } from "../utils/mailer.js";
 import crypto from "crypto";
 
 // ====================== SEND OTP ==========================
@@ -35,25 +35,24 @@ export const sendOTP = asyncHandler(async (req, res) => {
   });
 
   // Mail setup
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    }
-  });
+  try {
+    await transporter.sendMail({
+      from: `Aptos Ticketing <${process.env.BREVO_FROM_EMAIL}>`,
+      to: email,
+      subject: "OTP for Aptos Ticketing Verification",
+      html: `
+        <h2>Your OTP: <b>${otpCode}</b></h2>
+        <p>Valid for 5 minutes</p>
+      `,
+    });
+  } catch (error) {
+    throw new ApiError(500, "Failed to send OTP email");
+  }
 
-  await transporter.sendMail({
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: "OTP for Aptos Ticketing Verification",
-    html: `<h2>Your OTP: <b>${otpCode}</b></h2><p>Valid for 5 minutes</p>`
+    return res
+      .status(200)
+      .json(new ApiResponse(200, null, "OTP sent successfully"));
   });
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, null, "OTP sent successfully"));
-});
 
 
 // ====================== VERIFY OTP ==========================
