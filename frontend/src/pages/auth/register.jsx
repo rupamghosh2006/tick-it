@@ -6,19 +6,19 @@ const BACKEND = import.meta.env.VITE_BACKEND_URL;
 export default function FollowUpForm() {
     const navigate = useNavigate();
 
-    const [step, setStep] = useState<"wallet" | "email" | "name">("wallet");
-    const [address, setAddress] = useState<string | null>(null);
+    const [step, setStep] = useState("wallet");
+    const [address, setAddress] = useState(null);
     const [email, setEmail] = useState("");
     const [name, setName] = useState("");
     const [loading, setLoading] = useState(false);
 
     // called by <AptosConnect />
-    const onWalletSuccess = (addr: string) => {
+    const onWalletSuccess = (addr) => {
         setAddress(addr);
         setStep("email");
     };
 
-    const post = async (url: string, body: { address: string; email: string;  }) => {
+    const post = async (url, body) => {
         const res = await fetch(`${BACKEND}${url}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },

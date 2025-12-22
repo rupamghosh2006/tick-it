@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
 
-const Address = ({ onSuccess }: { onSuccess: (a: string) => void }) => {
+const Address = ({ onSuccess }) => {
     const { connect, account, connected } = useWallet();
     const [loading, setLoading] = useState(false);
 
@@ -23,8 +23,8 @@ const Address = ({ onSuccess }: { onSuccess: (a: string) => void }) => {
 
             let addr = account?.address?.toString();
 
-            if (!addr && (window as any).aptos?.account) {
-                const acc = await (window as any).aptos.account();
+            if (!addr && window.aptos?.account) {
+                const acc = await window.aptos.account();
                 addr = acc?.address;
             }
 
@@ -32,8 +32,8 @@ const Address = ({ onSuccess }: { onSuccess: (a: string) => void }) => {
                 for (let i = 0; i < 10; i++) {
                     await new Promise((r) => setTimeout(r, 200));
                     try {
-                        if ((window as any).aptos?.account) {
-                            const acc = await (window as any).aptos.account();
+                        if (window.aptos?.account) {
+                            const acc = await window.aptos.account();
                             addr = acc?.address;
                         } else {
                             addr = account?.address?.toString();
