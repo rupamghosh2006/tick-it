@@ -2,61 +2,68 @@ import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import { useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
 
 const Address = ({ onSuccess }) => {
     const { connect, account, connected } = useWallet();
     const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
+
+    const connectFlow = async () => {
+        if (!connected) {
+            try {
+                await connect("Petra");
+            } catch {
+                window.open("https://petra.app", "_blank");
+                throw new Error("Connect failed");
+            }
+        }
+
+        let addr = account?.address?.toString();
+
+        if (!addr && window.aptos?.account) {
+            const acc = await window.aptos.account();
+            addr = acc?.address;
+        }
+
+        if (!addr) throw new Error("No address");
+
+        // check existence
+        const userRes = await axios.get(`${backend}/api/user/${addr}`);
+        if (userRes.data?.success) {
+            const u = userRes.data.data;
+            localStorage.setItem("address", u.walletAddress);
+            localStorage.setItem("email", u.email);
+            localStorage.setItem("verified", String(u.isVerified));
+        }
+
+        // login for token
+        const loginRes = await axios.post(`${backend}/api/wallet/login`, {
+            address: addr,
+        });
+
+        localStorage.setItem("token", loginRes.data.data.token);
+
+        onSuccess(addr);
+        navigate("/dashboard");
+    };
 
     const handleConnect = async () => {
         setLoading(true);
         try {
-            if (!connected) {
-                try {
-                    await connect("Petra");
-                } catch (err) {
-                    window.open("https://petra.app", "_blank");
-                    return;
-                }
-            }
-
-            let addr = account?.address?.toString();
-
-            if (!addr && window.aptos?.account) {
-                const acc = await window.aptos.account();
-                addr = acc?.address;
-            }
-
-            if (!addr) {
-                for (let i = 0; i < 10; i++) {
-                    await new Promise((r) => setTimeout(r, 200));
-                    try {
-                        if (window.aptos?.account) {
-                            const acc = await window.aptos.account();
-                            addr = acc?.address;
-                        } else {
-                            addr = account?.address?.toString();
-                        }
-                    } catch { /* ignore */ }
-                    if (addr) break;
-                }
-            }
-
-            if (!addr) {
-                window.open("https://petra.app", "_blank");
-            }
-
-            await axios.post(`${backend}/api/wallet/login`, { address: addr }).then((res) => {
-                localStorage.setItem("token", res.data.data.token);
-            });
-
-            localStorage.setItem("address", addr);
-            onSuccess(addr);
+            await connectFlow();
             toast.success("Wallet connected");
         } catch (e) {
-            toast.error("Wallet connection failed");
-            console.error(e);
+            try {
+                // retry once
+                await connectFlow();
+                toast.success("Wallet connected");
+            } catch (e2) {
+                console.error(e2);
+                toast.error("Wallet connection failed");
+            }
         } finally {
             setLoading(false);
         }
