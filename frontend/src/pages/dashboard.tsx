@@ -147,7 +147,7 @@ function EventCard({ event, onClick, isPurchased = false, isHosted = false }: Ev
   const availableSeats = getAvailableSeats(event);
   const isSoldOut = availableSeats <= 0;
   const occupancyRate = (event.soldSeats / event.maxSeats) * 100;
-  const occupancyRateStr = occupancyRate.toFixed(0);
+  const occupancyRateDisplay = occupancyRate.toFixed(0);
 
   return (
     <div
@@ -254,7 +254,7 @@ function EventCard({ event, onClick, isPurchased = false, isHosted = false }: Ev
                 className={`h-full rounded-full transition-all duration-500 ${
                   isSoldOut ? "bg-red-500" : occupancyRate > 80 ? "bg-yellow-500" : "bg-blue-500"
                 }`}
-                style={{ width: `${occupancyRateStr}%` }}
+                style={{ width: `${occupancyRateDisplay}%` }}
               />
             </div>
           </div>
@@ -348,9 +348,17 @@ function ErrorState({ message, onRetry }: ErrorStateProps) {
 }
 
 // Enhanced Create Event Form
+interface InputChangeEvent {
+  target: {
+    name: string;
+    value: string | File | ArrayBuffer | null;
+    type?: string;
+  };
+}
+
 interface CreateEventFormProps {
   formData: FormData;
-  onInputChange: (e: { target: { name: string; value: unknown; type?: string } }) => void;
+  onInputChange: (e: InputChangeEvent) => void;
   onSubmit: () => void;
   isLoading: boolean;
   errors: FormErrors;
@@ -1156,7 +1164,7 @@ export default function EventDashboard() {
     }
   };
 
-  const handleInputChange = (e: { target: { name: string; value: unknown; type?: string } }) => {
+  const handleInputChange = (e: InputChangeEvent) => {
     const { name, value, type } = e.target;
     
     if (type === 'file') {
