@@ -59,9 +59,9 @@ const eventSchema = new mongoose.Schema(
     },
 
     eventBlockchainId: {
-      type: Number,
-      required: true,
-    },
+    type: String,
+    required: true,
+  },
   },
   { timestamps: true }
 );

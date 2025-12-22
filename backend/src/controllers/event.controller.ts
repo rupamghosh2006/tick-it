@@ -17,16 +17,16 @@ export const createEvent = asyncHandler(async (req, res) => {
     permission,
     maxSeats,
     eventBlockchainId,
+    hostAddress: bodyHost,
   } = req.body;
 
-  // 🔒 basic validation
   if (
     !eventName ||
     !eventDescription ||
     !mode ||
     !date ||
     !time ||
-    !ticketPrice ||
+    ticketPrice === undefined ||
     !permission ||
     !maxSeats ||
     !eventBlockchainId
@@ -34,23 +34,20 @@ export const createEvent = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All required event fields must be provided");
   }
 
-  if (!req.user?.address) {
-    throw new ApiError(401, "User address is required to create an event");
+  const hostAddress = req.user?.address || bodyHost;
+  if (!hostAddress) {
+    throw new ApiError(401, "Host address required");
   }
 
-  // 🖼 banner image required
   if (!req.file) {
     throw new ApiError(400, "Event banner image is required");
   }
 
-  // ⬆️ Upload banner to Pinata (IPFS)
   const imageUrl = await uploadToPinata(req.file.path);
-
-  // 🧹 delete local file after upload
   fs.unlinkSync(req.file.path);
 
   const newEvent = await Event.create({
-    hostAddress: req.user.address,
+    hostAddress,
     eventName,
     eventDescription,
     mode,
@@ -60,8 +57,8 @@ export const createEvent = asyncHandler(async (req, res) => {
     ticketPrice: Number(ticketPrice),
     permission,
     maxSeats: Number(maxSeats),
-    eventBlockchainId: Number(eventBlockchainId),
-    imageUrl, // ✅ IPFS URL
+    eventBlockchainId, // ✅ STRING
+    imageUrl,
   });
 
   return res
