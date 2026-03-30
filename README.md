@@ -1,7 +1,3 @@
-Here’s a tightened, more technical README with clearer positioning, less repetition, and stronger protocol-level framing. You can drop it in directly.
-
----
-
 # Tick It
 
 **Tick It** is a decentralized event ticketing platform that eliminates intermediaries, prevents ticket fraud, and enforces fair resale rules using on-chain logic. Built as a dApp on the **Aptos blockchain**, it replaces fragile Web2 ticketing systems with verifiable ownership, deterministic rules, and wallet-native identity.
