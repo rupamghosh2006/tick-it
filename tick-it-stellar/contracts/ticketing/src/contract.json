@@ -1,0 +1,23 @@
+{
+  "contract": "ticketing",
+  "name": "Tick-It Ticket Contract",
+  "version": "1.0.0",
+  "description": "A decentralized event ticketing system on Stellar",
+  "deployments": [
+    {
+      "network": "testnet",
+      "contractId": "CBPNZIJXF4TTTWRNEYRQTRUINLRTB6VODMFUDVEBHH2BSXHPOAFUHPDH",
+      "deployedAt": "2026-03-30"
+    }
+  ],
+  "token": {
+    "type": "native",
+    "symbol": "XLM"
+  },
+  "events": [
+    {
+      "name": "TicketPurchased",
+      "fields": ["owner", "event_id", "ticket_id", "price"]
+    }
+  ]
+}
